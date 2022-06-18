@@ -32,18 +32,18 @@ namespace CapaPresentacionAdmin.Controllers
         }
 
         [HttpPost]
-        public JsonResult GuardarUsuario(Usuario objUsuario)
+        public JsonResult GuardarUsuario(Usuario objeto)
         {
             object resultado;
             string mensaje = string.Empty;
 
-            if (objUsuario.IdUsuario == 0)
+            if (objeto.IdUsuario == 0)
             {
-                resultado = new CN_Usuarios().Registrar(objUsuario, out mensaje);
+                resultado = new CN_Usuarios().Registrar(objeto, out mensaje);
             }
             else
             {
-                resultado = new CN_Usuarios().Editar(objUsuario, out mensaje);
+                resultado = new CN_Usuarios().Editar(objeto, out mensaje);
             }
 
             return Json(new { resultado = resultado, mensaje = mensaje }, JsonRequestBehavior.AllowGet);

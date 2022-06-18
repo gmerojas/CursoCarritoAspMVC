@@ -250,5 +250,226 @@ end;
 
 
 
+create proc sp_RegistrarCategoria(
+@Descripcion varchar(100),
+@Activo bit,
+@Mensaje varchar(500) output,
+@Resultado int output
+)
+as
+begin
+	set @Resultado = 0
+
+	if not exists (select * from CATEGORIA where Descripcion = @Descripcion)
+		begin
+			insert into Categoria(Descripcion,Activo) values
+			(@Descripcion,@Activo)
+
+			set @Resultado = SCOPE_IDENTITY()
+		end
+	else
+		set @Mensaje = 'La categoría ya existe'
+end;
 
 
+create proc sp_EditarCategoria (
+@IdCategoria int,
+@Descripcion varchar(100),
+@Activo bit,
+@Mensaje varchar(500) output,
+@Resultado int output
+)
+as
+begin
+	set @Resultado = 0
+
+	if not exists (select * from CATEGORIA where Descripcion = @Descripcion and IdCategoria != @IdCategoria)
+		begin
+			update top (1) CATEGORIA set
+			Descripcion = @Descripcion,
+			Activo = @Activo
+			where IdCategoria = @IdCategoria
+
+			set @Resultado = 1
+		end
+	else
+		set @Mensaje = 'La categoría ya existe'
+end;
+
+
+create proc sp_EliminarCategoria (
+@IdCategoria int,
+@Mensaje varchar(500) output,
+@Resultado int output
+)
+as
+begin
+	set @Resultado = 0
+
+	if not exists (select * from PRODUCTO p inner join  CATEGORIA c on c.IdCategoria = p.IdCategoria 
+	where p.IdCategoria = @IdCategoria)
+		begin
+			delete top(1) from CATEGORIA
+			where IdCategoria = @IdCategoria
+
+			set @Resultado = 1
+		end
+	else
+		set @Mensaje = 'La categoría se encuentra relacionada a un producto'
+end;
+
+create proc sp_RegistrarMarca(
+@Descripcion varchar(100),
+@Activo bit,
+@Mensaje varchar(500) output,
+@Resultado int output
+)
+as
+begin
+	set @Resultado = 0
+
+	if not exists (select * from MARCA where Descripcion = @Descripcion)
+		begin
+			insert into Categoria(Descripcion,Activo) values
+			(@Descripcion,@Activo)
+
+			set @Resultado = SCOPE_IDENTITY()
+		end
+	else
+		set @Mensaje = 'La marca ya existe'
+end;
+
+
+create proc sp_EditarMarca(
+@IdMarca int,
+@Descripcion varchar(100),
+@Activo bit,
+@Mensaje varchar(500) output,
+@Resultado int output
+)
+as
+begin
+	set @Resultado = 0
+
+	if not exists (select * from MARCA where Descripcion = @Descripcion and IdMarca != @IdMarca)
+		begin
+			update top (1) MARCA set
+			Descripcion = @Descripcion,
+			Activo = @Activo
+			where IdMarca = @IdMarca
+
+			set @Resultado = 1
+		end
+	else
+		set @Mensaje = 'La marca ya existe'
+end;
+
+
+create proc sp_EliminarMarca (
+@IdMarca int,
+@Mensaje varchar(500) output,
+@Resultado int output
+)
+as
+begin
+	set @Resultado = 0
+
+	if not exists (select * from PRODUCTO p inner join  MARCA m on m.IdMarca = p.IdMarca 
+	where p.IdMarca = @IdMarca)
+		begin
+			delete top(1) from MARCA
+			where IdMarca = @IdMarca
+
+			set @Resultado = 1
+		end
+	else
+		set @Mensaje = 'La marca se encuentra relacionada a un producto'
+end;
+
+
+
+/*********************************************************************************************************************/
+/*                                   PRODUCTO                                                      */
+/*********************************************************************************************************************/
+create proc sp_RegistrarProducto(
+@Nombre varchar(100),
+@Descripcion varchar(100),
+@IdMarca varchar(100),
+@IdCategoria varchar(100),
+@Precio decimal(10,2),
+@Stock int,
+@Activo bit,
+@Mensaje varchar(500) output,
+@Resultado int output
+)
+as
+begin
+	set @Resultado = 0
+
+	if not exists (select * from PRODUCTO where Nombre = @Nombre)
+		begin
+			insert into PRODUCTO(Nombre,Descripcion,IdMarca,IdCategoria,Precio,Stock,Activo) values
+			(@Nombre,@Descripcion,@IdMarca,@IdCategoria,@Precio,@Stock,@Activo)
+
+			set @Resultado = SCOPE_IDENTITY()
+		end
+	else
+		set @Mensaje = 'El producto ya existe'
+end;
+
+
+create proc sp_EditarProducto(
+@IdProducto int,
+@Nombre varchar(100),
+@Descripcion varchar(100),
+@IdMarca varchar(100),
+@IdCategoria varchar(100),
+@Precio decimal(10,2),
+@Stock int,
+@Activo bit,
+@Mensaje varchar(500) output,
+@Resultado int output
+)
+as
+begin
+	set @Resultado = 0
+
+	if not exists (select * from PRODUCTO where Nombre = @Nombre and IdProducto != @IdProducto)
+		begin
+			update top (1) PRODUCTO set
+			Nombre = @Nombre,
+			Descripcion = @Descripcion,
+			IdMarca = @IdMarca,
+			IdCategoria = @IdCategoria,
+			Precio = @Precio,
+			Stock = @Stock,
+			Activo = @Activo
+			where @IdProducto = @IdProducto
+
+			set @Resultado = 1
+		end
+	else
+		set @Mensaje = 'El producto ya existe'
+end;
+
+
+create proc sp_EliminarProducto(
+@IdProducto int,
+@Mensaje varchar(500) output,
+@Resultado int output
+)
+as
+begin
+	set @Resultado = 0
+
+	if not exists (select * from Detalle_Venta dv inner join PRODUCTO p on p.IdProducto = dv.IdProducto 
+	where p.IdProducto = @IdProducto)
+		begin
+			delete top(1) from PRODUCTO
+			where IdProducto = @IdProducto
+
+			set @Resultado = 1
+		end
+	else
+		set @Mensaje = 'El producto se encuentra relacionada a una venta'
+end;
