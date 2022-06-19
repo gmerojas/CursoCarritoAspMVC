@@ -473,3 +473,49 @@ begin
 	else
 		set @Mensaje = 'El producto se encuentra relacionada a una venta'
 end;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+create proc sp_ReporteVentas(
+@FechaInicio varchar(10),
+@FechaFin varchar(10),
+@IdTransaccion varchar(50)
+)
+as
+begin
+
+set dateformat dmy;
+
+select CONVERT(char(10),v.FechaVenta,103) [FechaVenta],concat(c.Nombre,' ',c.Apellidos) [Cliente],
+p.Nombre [Producto],p.Precio,dv.Cantidad,dv.Total,v.IdTransaccion
+from Detalle_Venta dv
+inner join PRODUCTO p on p.IdProducto = dv.IdProducto
+inner join Venta v on v.IdVenta = dv.IdVenta
+inner join Cliente c on c.IdCliente = v.IdCliente
+where convert(date,v.FechaVenta) between @FechaInicio and @FechaFin
+and v.IdTransaccion = iif(@IdTransaccion = '',v.IdTransaccion, @IdTransaccion)
+
+end

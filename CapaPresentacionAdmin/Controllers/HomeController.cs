@@ -13,6 +13,7 @@ using System.IO;
 
 namespace CapaPresentacionAdmin.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         public ActionResult Index()

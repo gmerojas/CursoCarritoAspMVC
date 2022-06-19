@@ -145,5 +145,53 @@ namespace CapaDatos
             }
             return resulatdo;
         }
+
+        public bool CambiarClave(int idUsuario, string nuevaClave, out string Mensaje)
+        {
+            bool resulatdo = false;
+            Mensaje = string.Empty;
+            try
+            {
+                using (SqlConnection oConexion = new SqlConnection(Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("update usuario set clave = @nuevaClave, reestablecer = 0 where IdUsuario = @id", oConexion);
+                    cmd.Parameters.AddWithValue("@id", idUsuario);
+                    cmd.Parameters.AddWithValue("@nuevaClave", nuevaClave);
+                    cmd.CommandType = CommandType.Text;
+                    oConexion.Open();
+                    resulatdo = cmd.ExecuteNonQuery() > 0 ? true : false;
+                }
+            }
+            catch (Exception ex)
+            {
+                resulatdo = false;
+                Mensaje = ex.Message;
+            }
+            return resulatdo;
+        }
+
+        public bool ReestablecerClave(int idUsuario, string clave, out string Mensaje)
+        {
+            bool resulatdo = false;
+            Mensaje = string.Empty;
+            try
+            {
+                using (SqlConnection oConexion = new SqlConnection(Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("update usuario set clave = @clave, reestablecer = 1 where IdUsuario = @id", oConexion);
+                    cmd.Parameters.AddWithValue("@id", idUsuario);
+                    cmd.Parameters.AddWithValue("@clave", clave);
+                    cmd.CommandType = CommandType.Text;
+                    oConexion.Open();
+                    resulatdo = cmd.ExecuteNonQuery() > 0 ? true : false;
+                }
+            }
+            catch (Exception ex)
+            {
+                resulatdo = false;
+                Mensaje = ex.Message;
+            }
+            return resulatdo;
+        }
     }
 }

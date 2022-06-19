@@ -203,7 +203,7 @@
 
 
         function guardar() {
-
+            debugger;
             var usuario = {
                 IdUsuario: $("#txtId").val(),
                 Nombres: $("#txtNombres").val(),
@@ -215,7 +215,7 @@
             jQuery.ajax({
                 url: '@Url.Action("GuardarUsuario","Home")',
                 type: "POST",
-                data: JSON.stringify({ objUsuario: usuario }),
+                data: JSON.stringify({ objeto: usuario }),
                 dataType: "json",
                 contentType: "application/json; charset=utf-8",
                 success: function (data) {
