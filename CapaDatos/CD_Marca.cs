@@ -144,5 +144,48 @@ namespace CapaDatos
             }
             return resulatdo;
         }
+
+        public List<Marca> ListarMarcaPorCategoria(int idCategoria)
+        {
+            List<Marca> Lista = new List<Marca>();
+
+            try
+            {
+                using (SqlConnection oConexion = new SqlConnection(Conexion.cn))
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine("select distinct m.IdMarca, m.Descripcion from PRODUCTO p");
+                    sb.AppendLine("inner join CATEGORIA c on p.IdCategoria = c.IdCategoria");
+                    sb.AppendLine("inner join MARCA m on m.IdMarca = p.IdMarca and m.Activo = 1");
+                    sb.AppendLine("where c.IdCategoria = iif(@idCategoria = 0, c.IdCategoria, @idCategoria)");
+
+                    SqlCommand cmd = new SqlCommand(sb.ToString(), oConexion);
+                    cmd.Parameters.AddWithValue("@idCategoria", idCategoria);
+                    cmd.CommandType = CommandType.Text;
+
+                    oConexion.Open();
+
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        while (dr.Read())
+                        {
+                            Lista.Add(
+                                new Marca()
+                                {
+                                    IdMarca = Convert.ToInt32(dr["IdMarca"]),
+                                    Descripcion = dr["Descripcion"].ToString(),
+                                }
+                            );
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Lista = new List<Marca>();
+            }
+
+            return Lista;
+        }
     }
 }

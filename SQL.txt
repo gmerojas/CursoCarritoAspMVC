@@ -519,3 +519,198 @@ where convert(date,v.FechaVenta) between @FechaInicio and @FechaFin
 and v.IdTransaccion = iif(@IdTransaccion = '',v.IdTransaccion, @IdTransaccion)
 
 end
+
+
+
+
+create proc sp_RegistrarCliente(
+@Nombres varchar(100),
+@Apellidos varchar(100),
+@Correo varchar(100),
+@Clave varchar(100),
+@Mensaje varchar(500) output,
+@Resultado int output
+)
+as
+begin
+
+	set @Resultado = 0
+	if not exists (select * from Cliente where Correo = @Correo)
+		begin
+			insert into Cliente(Nombre,Apellidos,Correo,Clave,Reestablecer) values
+			(@Nombres,@Apellidos,@Correo,@Clave,0)
+
+			set @Resultado = SCOPE_IDENTITY()
+		end
+	else
+		set @Mensaje = 'El correo del cliente ya existe'
+
+end
+
+
+
+
+create proc sp_ExisteCarrito(
+@IdCliente int,
+@IdProducto int,
+@Resultado bit output
+)
+as
+begin
+
+	if exists (select * from carrito where IdCliente = @IdCliente and IdProducto = @IdProducto)
+		set @Resultado = 1
+	else
+		set @Resultado = 0
+end
+
+
+create proc sp_OperacionCarrito(
+@IdCliente int,
+@IdProducto int,
+@Sumar bit,
+@Mensaje varchar(500) output,
+@Resultado bit output
+)
+as
+begin
+
+	set @Resultado = 1
+	set @Mensaje = ''
+
+	declare @existeCarrito bit = iif(exists(select * from carrito where IdCliente = @IdCliente and IdProducto = @IdProducto),1,0)
+	declare @stockProducto int = (select stock from PRODUCTO where IdProducto = @IdProducto)
+
+	begin try
+		begin transaction operacion
+			if(@Sumar = 1)
+				begin
+					if(@stockProducto > 0)
+						begin
+							if(@existeCarrito = 1)
+								update Carrito set Cantidad = Cantidad + 1 where IdCliente = @IdCliente and IdProducto = @IdProducto
+							else
+								insert into carrito(IdCliente,IdProducto,Cantidad) values(@IdCliente,@IdProducto,1)
+
+								update PRODUCTO set stock = Stock - 1 where IdProducto = @IdProducto
+						end
+					else
+						begin
+							set @Resultado = 0
+							set @Mensaje = 'El producto no cuenta con stock disponible'
+						end
+				end
+			else
+				begin
+					update carrito set Cantidad = Cantidad - 1 where IdCliente = @IdCliente and IdProducto = @IdProducto
+					update PRODUCTO set Stock = Stock + 1 where IdProducto = @IdProducto
+				end
+		commit transaction operacion
+
+	end try
+	begin catch
+		set @Resultado = 0
+		set @Mensaje = ERROR_MESSAGE()
+		rollback transaction operacion
+	end catch
+	
+end
+
+
+
+create function fn_ObtenerCarritoCliente(
+@IdCliente int
+)
+returns table
+as
+return(
+	select p.IdProducto,m.Descripcion[DesMarca],p.Nombre,p.Precio,c.Cantidad,p.RutaImagen,p.NombreImagen from Carrito c
+	inner join PRODUCTO p on p.IdProducto = c.IdProducto
+	inner join MARCA m on m.IdMarca = p.IdMarca
+	where c.IdCliente = @IdCliente
+)
+
+
+
+
+
+
+create proc sp_EliminarCarrito(
+@IdCliente int,
+@IdProducto int,
+@Resultado bit output
+)
+as
+begin
+
+	set @Resultado = 1
+	declare @CantidadProducto int = (select cantidad from Carrito where IdCliente = @IdCliente and IdProducto = @IdProducto)
+
+	begin try
+		begin transaction operacion
+			update PRODUCTO set Stock = Stock + @CantidadProducto where IdProducto = @IdProducto
+			delete top (1) from Carrito where IdCliente = @IdCliente and IdProducto = @IdProducto
+		commit transaction operacion
+	end try
+	begin catch
+		set @Resultado = 0
+		rollback transaction operacion
+	end catch
+
+end
+
+
+
+
+
+create type EDetalleVenta as table(
+IdProducto int null,
+Cantidad int null,
+Total decimal(18,2) null
+)
+
+
+
+create proc usp_RegistrarVenta(
+@IdCliente int,
+@TotalProducto int,
+@MontoTotal decimal(18,2),
+@Contacto varchar(100),
+@IdDistrito varchar(6),
+@Telefono varchar(10),
+@Direccion varchar(100),
+@IdTransaccion varchar(50),
+@DetalleVenta [EDetalleVenta] readonly,
+@Resultado bit output,
+@Mensaje varchar(500) output
+)
+as
+begin
+	begin try
+		
+		declare @idVenta int = 0
+		set @Resultado = 1
+		set @Mensaje = ''
+
+
+		begin transaction registro
+
+			insert into Venta(IdCliente,TotalProducto,MontoTotal,Cantacto,IdDistrito,Telefono,Direccion,IdTransaccion)
+			values(@IdCliente,@TotalProducto,@MontoTotal,@Contacto,@IdDistrito,@Telefono,@Direccion,@IdTransaccion)
+
+			set @idVenta = SCOPE_IDENTITY()
+
+			insert into Detalle_Venta(IdVenta,IdProducto,Cantidad,Total)
+			select @idVenta,IdProducto,Cantidad,Total from @DetalleVenta
+
+			delete from Carrito where IdCliente = @IdCliente
+
+		commit transaction registro
+
+	end try
+	begin catch
+		set @Resultado = 0
+		set @Mensaje = ERROR_MESSAGE()
+		rollback transaction registro
+	end catch
+end
